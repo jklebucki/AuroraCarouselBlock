@@ -20,6 +20,12 @@
     arrowColor: { type: 'string', default: '#000000' },
     arrowBgColor: { type: 'string', default: '#ffffff' },
     arrowBorderColor: { type: 'string', default: 'rgba(0,0,0,0.2)' },
+    dotsSize: { type: 'number', default: 10 },
+    dotsOpacity: { type: 'number', default: 0.35 },
+    dotsActiveOpacity: { type: 'number', default: 0.75 },
+    dotsColor: { type: 'string', default: '#000000' },
+    dotsActiveColor: { type: 'string', default: '#000000' },
+    dotsBorderColor: { type: 'string', default: 'rgba(0,0,0,0.25)' },
 
     slidesPerViewMobile: { type: 'number', default: 1.1 },
     slidesPerViewTablet: { type: 'number', default: 2 },
@@ -112,6 +118,24 @@
               value: attributes.arrowBgOpacity,
               onChange: (v) => setAttributes({ arrowBgOpacity: v }),
               min: 0, max: 1, step: 0.05
+            }),
+            el(RangeControl, {
+              label: __('Dots size (px)', 'aurora-carousel'),
+              value: attributes.dotsSize,
+              onChange: (v) => setAttributes({ dotsSize: v }),
+              min: 6, max: 20, step: 1
+            }),
+            el(RangeControl, {
+              label: __('Dots opacity', 'aurora-carousel'),
+              value: attributes.dotsOpacity,
+              onChange: (v) => setAttributes({ dotsOpacity: v }),
+              min: 0, max: 1, step: 0.05
+            }),
+            el(RangeControl, {
+              label: __('Dots active opacity', 'aurora-carousel'),
+              value: attributes.dotsActiveOpacity,
+              onChange: (v) => setAttributes({ dotsActiveOpacity: v }),
+              min: 0, max: 1, step: 0.05
             })
           ),
 
@@ -178,6 +202,21 @@
                 value: attributes.arrowBorderColor,
                 onChange: (v) => setAttributes({ arrowBorderColor: v }),
                 label: __('Arrow border (circle)', 'aurora-carousel')
+              },
+              {
+                value: attributes.dotsColor,
+                onChange: (v) => setAttributes({ dotsColor: v }),
+                label: __('Dots color', 'aurora-carousel')
+              },
+              {
+                value: attributes.dotsActiveColor,
+                onChange: (v) => setAttributes({ dotsActiveColor: v }),
+                label: __('Dots active color', 'aurora-carousel')
+              },
+              {
+                value: attributes.dotsBorderColor,
+                onChange: (v) => setAttributes({ dotsBorderColor: v }),
+                label: __('Dots border color', 'aurora-carousel')
               }
             ]
           })
@@ -231,10 +270,20 @@
         '--aurora-arrow-color': a.arrowColor || '#000000',
         '--aurora-arrow-bg': a.arrowBgColor || '#ffffff',
         '--aurora-arrow-border': a.arrowBorderColor || 'rgba(0,0,0,0.2)',
-        '--aurora-arrow-bg-opacity': String(a.arrowBgOpacity != null ? a.arrowBgOpacity : 0.92)
+        '--aurora-arrow-bg-opacity': String(a.arrowBgOpacity != null ? a.arrowBgOpacity : 0.92),
+        '--aurora-dots-size': (a.dotsSize != null ? a.dotsSize : 10) + 'px',
+        '--aurora-dots-opacity': String(a.dotsOpacity != null ? a.dotsOpacity : 0.35),
+        '--aurora-dots-active-opacity': String(a.dotsActiveOpacity != null ? a.dotsActiveOpacity : 0.75),
+        '--aurora-dots-color': a.dotsColor || '#000000',
+        '--aurora-dots-active-color': a.dotsActiveColor || (a.dotsColor || '#000000'),
+        '--aurora-dots-border': a.dotsBorderColor || 'rgba(0,0,0,0.25)'
       };
       var bgRgb = colorToRgb(a.arrowBgColor);
       if (bgRgb) styleVars['--aurora-arrow-bg-rgb'] = bgRgb;
+      var dotsRgb = colorToRgb(a.dotsColor);
+      if (dotsRgb) styleVars['--aurora-dots-color-rgb'] = dotsRgb;
+      var dotsActiveRgb = colorToRgb(a.dotsActiveColor);
+      if (dotsActiveRgb) styleVars['--aurora-dots-active-color-rgb'] = dotsActiveRgb;
 
       const blockProps = useBlockProps.save({
         className: 'aurora-carousel',
