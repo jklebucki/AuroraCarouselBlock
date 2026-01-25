@@ -1,0 +1,21 @@
+/* Editor styles for Aurora Carousel Block */
+
+.wp-block-aurora-carousel {
+  border: 1px dashed rgba(0,0,0,0.25);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.wp-block-aurora-carousel .aurora-carousel__editor-hint {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-bottom: 10px;
+}
+
+.wp-block-aurora-carousel-slide {
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255,255,255,0.65);
+  margin-bottom: 12px;
+}
