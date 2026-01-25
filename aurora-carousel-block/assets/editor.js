@@ -155,6 +155,10 @@
       const a = props.attributes;
       const blockProps = useBlockProps.save({
         className: 'aurora-carousel',
+        tabindex: '0',
+        role: 'region',
+        'aria-roledescription': 'carousel',
+        'aria-label': 'Aurora Carousel',
         'data-autoplay': a.autoplay ? '1' : '0',
         'data-autoplay-delay': String(a.autoplayDelay),
         'data-speed': String(a.speed),

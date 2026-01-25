@@ -44,27 +44,70 @@
     var track = root.querySelector('.aurora-carousel__track');
     if (!viewport || !track) return;
 
-    var slides = Array.prototype.slice.call(root.querySelectorAll('.aurora-carousel__slide'));
-    if (!slides.length) return;
+    var originalSlides = Array.prototype.slice.call(track.querySelectorAll('.aurora-carousel__slide'));
+    if (!originalSlides.length) return;
 
     var btnPrev = root.querySelector('.aurora-carousel__prev');
     var btnNext = root.querySelector('.aurora-carousel__next');
     var pagination = root.querySelector('.aurora-carousel__pagination');
 
     // If only one slide, disable some features
-    var single = slides.length <= 1;
+    var single = originalSlides.length <= 1;
 
     // State
     var state = {
-      index: 0,
+      page: 0,
+      virtualPage: 0,
       timer: null,
-      lastLayout: { spv: null, gap: null, slideW: null }
+      lastLayout: { spv: null, gap: null, slideW: null, pageSize: null, pageCount: null, maxStart: null }
     };
 
     // Apply base styles
     track.style.transitionProperty = 'transform';
     track.style.transitionTimingFunction = 'ease';
     track.style.willChange = 'transform';
+
+    function getAllSlides() {
+      return Array.prototype.slice.call(track.querySelectorAll('.aurora-carousel__slide'));
+    }
+
+    function cleanupClones() {
+      var clones = track.querySelectorAll('[data-aurora-clone="1"]');
+      for (var i = 0; i < clones.length; i++) {
+        clones[i].parentNode.removeChild(clones[i]);
+      }
+    }
+
+    function buildClones(pageSize) {
+      cleanupClones();
+      if (!cfg.loop || single) return;
+      if (originalSlides.length <= pageSize) return;
+
+      var head = originalSlides.slice(0, pageSize);
+      var tail = originalSlides.slice(Math.max(0, originalSlides.length - pageSize));
+
+      // Prepend tail clones
+      for (var i = 0; i < tail.length; i++) {
+        var c1 = tail[i].cloneNode(true);
+        c1.setAttribute('data-aurora-clone', '1');
+        track.insertBefore(c1, track.firstChild);
+      }
+
+      // Append head clones
+      for (var j = 0; j < head.length; j++) {
+        var c2 = head[j].cloneNode(true);
+        c2.setAttribute('data-aurora-clone', '1');
+        track.appendChild(c2);
+      }
+    }
+
+    function getPageSize(spv) {
+      return Math.max(1, Math.round(spv));
+    }
+
+    function isSinglePage() {
+      return !state.lastLayout.pageCount || state.lastLayout.pageCount <= 1;
+    }
 
     function layout() {
       var responsive = pickResponsive(cfg);
@@ -74,6 +117,16 @@
       // Ensure sane values
       spv = Math.max(1, spv);
       gap = Math.max(0, gap);
+
+      var pageSize = getPageSize(spv);
+      var pageCount = Math.ceil(originalSlides.length / pageSize);
+      var maxStart = Math.max(0, originalSlides.length - pageSize);
+
+      if (state.lastLayout.pageSize !== pageSize) {
+        buildClones(pageSize);
+      }
+
+      var slides = getAllSlides();
 
       // Apply gap
       track.style.gap = gap + 'px';
@@ -94,17 +147,38 @@
       // Transition speed
       track.style.transitionDuration = cfg.speed + 'ms';
 
-      state.lastLayout = { spv: spv, gap: gap, slideW: slideW };
+      state.lastLayout = { spv: spv, gap: gap, slideW: slideW, pageSize: pageSize, pageCount: pageCount, maxStart: maxStart };
 
-      // Keep index within range
-      state.index = clamp(state.index, 0, slides.length - 1);
+      // Keep page within range
+      state.page = clamp(state.page, 0, pageCount - 1);
+      if (!cfg.loop || originalSlides.length <= pageSize) {
+        state.virtualPage = state.page;
+      }
+
+      buildDots();
+      applyControlsVisibility();
       update(false);
     }
 
-    function translateXForIndex(idx) {
+    function slideStartForPage(pageIndex) {
+      var L = state.lastLayout;
+      var pageSize = L.pageSize;
+      var maxStart = L.maxStart;
+      var base = (cfg.loop && originalSlides.length > pageSize) ? pageSize : 0;
+
+      if (cfg.loop && originalSlides.length > pageSize) {
+        if (pageIndex === -1) return 0;
+        if (pageIndex === L.pageCount) return base + originalSlides.length;
+      }
+
+      var start = Math.min(pageIndex * pageSize, maxStart);
+      return base + start;
+    }
+
+    function translateXForPage(pageIndex) {
       var L = state.lastLayout;
       var step = L.slideW + L.gap;
-      return -(idx * step);
+      return -(slideStartForPage(pageIndex) * step);
     }
 
     function update(animate) {
@@ -112,43 +186,55 @@
         // temporarily disable transition
         var prev = track.style.transitionDuration;
         track.style.transitionDuration = '0ms';
-        track.style.transform = 'translate3d(' + translateXForIndex(state.index) + 'px,0,0)';
+        track.style.transform = 'translate3d(' + translateXForPage(state.virtualPage) + 'px,0,0)';
         // force reflow
         track.getBoundingClientRect();
         track.style.transitionDuration = prev;
       } else {
-        track.style.transform = 'translate3d(' + translateXForIndex(state.index) + 'px,0,0)';
+        track.style.transform = 'translate3d(' + translateXForPage(state.virtualPage) + 'px,0,0)';
       }
 
       // Update dots
       if (cfg.dots && pagination) {
         var dots = pagination.querySelectorAll('.aurora-carousel__dot');
         for (var i = 0; i < dots.length; i++) {
-          dots[i].setAttribute('aria-current', i === state.index ? 'true' : 'false');
+          dots[i].setAttribute('aria-current', i === state.page ? 'true' : 'false');
         }
       }
 
       // Update arrow disabled state when not looping
-      if (cfg.arrows && btnPrev && btnNext && !cfg.loop) {
-        btnPrev.disabled = (state.index === 0);
-        btnNext.disabled = (state.index === slides.length - 1);
+      if (cfg.arrows && btnPrev && btnNext && (!cfg.loop || originalSlides.length <= state.lastLayout.pageSize)) {
+        btnPrev.disabled = (state.page === 0);
+        btnNext.disabled = (state.page === state.lastLayout.pageCount - 1);
       }
     }
 
-    function goTo(idx) {
-      if (single) return;
-      if (cfg.loop) {
-        if (idx < 0) idx = slides.length - 1;
-        if (idx >= slides.length) idx = 0;
+    function goTo(page) {
+      if (single || isSinglePage()) return;
+      var pageCount = state.lastLayout.pageCount;
+      var pageSize = state.lastLayout.pageSize;
+
+      if (cfg.loop && originalSlides.length > pageSize) {
+        if (page < 0) {
+          state.page = pageCount - 1;
+          state.virtualPage = -1;
+        } else if (page >= pageCount) {
+          state.page = 0;
+          state.virtualPage = pageCount;
+        } else {
+          state.page = page;
+          state.virtualPage = page;
+        }
       } else {
-        idx = clamp(idx, 0, slides.length - 1);
+        page = clamp(page, 0, pageCount - 1);
+        state.page = page;
+        state.virtualPage = page;
       }
-      state.index = idx;
       update(true);
     }
 
-    function next() { goTo(state.index + 1); }
-    function prev() { goTo(state.index - 1); }
+    function next() { goTo(state.page + 1); }
+    function prev() { goTo(state.page - 1); }
 
     function stopAutoplay() {
       if (state.timer) {
@@ -158,7 +244,7 @@
     }
 
     function startAutoplay() {
-      if (!cfg.autoplay || single) return;
+      if (!cfg.autoplay || single || isSinglePage()) return;
       stopAutoplay();
       state.timer = setInterval(function () {
         next();
@@ -168,15 +254,15 @@
     function buildDots() {
       if (!pagination) return;
       pagination.innerHTML = '';
-      if (!cfg.dots || single) return;
+      if (!cfg.dots || single || isSinglePage()) return;
 
-      for (var i = 0; i < slides.length; i++) {
+      for (var i = 0; i < state.lastLayout.pageCount; i++) {
         (function (dotIndex) {
           var b = document.createElement('button');
           b.type = 'button';
           b.className = 'aurora-carousel__dot';
-          b.setAttribute('aria-label', 'Go to slide ' + (dotIndex + 1));
-          b.setAttribute('aria-current', dotIndex === state.index ? 'true' : 'false');
+          b.setAttribute('aria-label', 'Go to page ' + (dotIndex + 1));
+          b.setAttribute('aria-current', dotIndex === state.page ? 'true' : 'false');
           b.addEventListener('click', function () {
             goTo(dotIndex);
           });
@@ -187,18 +273,32 @@
 
     function applyControlsVisibility() {
       if (btnPrev && btnNext) {
-        var show = cfg.arrows && !single;
+        var show = cfg.arrows && !single && !isSinglePage();
         btnPrev.style.display = show ? '' : 'none';
         btnNext.style.display = show ? '' : 'none';
       }
       if (pagination) {
-        pagination.style.display = (cfg.dots && !single) ? '' : 'none';
+        pagination.style.display = (cfg.dots && !single && !isSinglePage()) ? '' : 'none';
       }
     }
 
     // Events
     if (btnPrev) btnPrev.addEventListener('click', prev);
     if (btnNext) btnNext.addEventListener('click', next);
+
+    // Seamless loop snapping
+    track.addEventListener('transitionend', function (e) {
+      if (e.propertyName !== 'transform') return;
+      if (!cfg.loop) return;
+      if (originalSlides.length <= state.lastLayout.pageSize) return;
+      if (state.virtualPage === -1) {
+        state.virtualPage = state.lastLayout.pageCount - 1;
+        update(false);
+      } else if (state.virtualPage === state.lastLayout.pageCount) {
+        state.virtualPage = 0;
+        update(false);
+      }
+    });
 
     // Pause on hover
     if (cfg.pauseOnHover && cfg.autoplay && !single) {
@@ -208,7 +308,7 @@
 
     // Keyboard navigation (when focused)
     root.addEventListener('keydown', function (e) {
-      if (!cfg.arrows || single) return;
+      if (!cfg.arrows || single || isSinglePage()) return;
       if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
       if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
     });
@@ -216,7 +316,7 @@
     // Touch swipe (basic)
     var touch = { active: false, startX: 0, dx: 0 };
     viewport.addEventListener('touchstart', function (e) {
-      if (single) return;
+      if (single || isSinglePage()) return;
       touch.active = true;
       touch.startX = e.touches[0].clientX;
       touch.dx = 0;
@@ -246,8 +346,6 @@
     });
 
     // Init
-    buildDots();
-    applyControlsVisibility();
     layout();
     startAutoplay();
 
