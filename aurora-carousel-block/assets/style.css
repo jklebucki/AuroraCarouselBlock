@@ -34,6 +34,9 @@
   z-index: 5;
   width: 40px;
   height: 40px;
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
   border-radius: 999px;
   border: 1px solid rgba(0,0,0,0.2);
   background: rgba(255,255,255,0.92);
@@ -56,6 +59,9 @@
 .wp-block-aurora-carousel .aurora-carousel__prev::before,
 .wp-block-aurora-carousel .aurora-carousel__next::before {
   content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: block;
   width: 10px;
   height: 10px;
@@ -64,12 +70,10 @@
 }
 
 .wp-block-aurora-carousel .aurora-carousel__prev::before {
-  transform: rotate(135deg);
-  margin-left: 2px;
+  transform: translate(-50%, -50%) rotate(135deg);
 }
 .wp-block-aurora-carousel .aurora-carousel__next::before {
-  transform: rotate(-45deg);
-  margin-right: 2px;
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .wp-block-aurora-carousel .aurora-carousel__pagination {
