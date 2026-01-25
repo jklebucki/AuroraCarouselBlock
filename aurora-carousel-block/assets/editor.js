@@ -2,7 +2,7 @@
   const { __ } = wp.i18n;
   const { registerBlockType } = wp.blocks;
   const { createElement: el, Fragment } = wp.element;
-  const { InspectorControls, InnerBlocks, useBlockProps } = wp.blockEditor;
+  const { InspectorControls, InnerBlocks, useBlockProps, PanelColorSettings } = wp.blockEditor;
   const { PanelBody, ToggleControl, RangeControl, Notice, SelectControl } = wp.components;
 
   const ALLOWED_SLIDE = ['aurora/carousel-slide'];
@@ -16,6 +16,10 @@
     arrows: { type: 'boolean', default: true },
     dots: { type: 'boolean', default: true },
     arrowSize: { type: 'string', default: 'm' },
+    arrowBgOpacity: { type: 'number', default: 0.92 },
+    arrowColor: { type: 'string', default: '#000000' },
+    arrowBgColor: { type: 'string', default: '#ffffff' },
+    arrowBorderColor: { type: 'string', default: 'rgba(0,0,0,0.2)' },
 
     slidesPerViewMobile: { type: 'number', default: 1.1 },
     slidesPerViewTablet: { type: 'number', default: 2 },
@@ -102,6 +106,12 @@
                 { label: 'XL', value: 'xl' }
               ],
               onChange: (v) => setAttributes({ arrowSize: v })
+            }),
+            el(RangeControl, {
+              label: __('Arrow background opacity', 'aurora-carousel'),
+              value: attributes.arrowBgOpacity,
+              onChange: (v) => setAttributes({ arrowBgOpacity: v }),
+              min: 0, max: 1, step: 0.05
             })
           ),
 
@@ -148,7 +158,29 @@
               onChange: (v) => setAttributes({ spaceBetweenDesktop: v }),
               min: 0, max: 100, step: 1
             })
-          )
+          ),
+
+          el(PanelColorSettings, {
+            title: __('Arrow colors', 'aurora-carousel'),
+            initialOpen: false,
+            colorSettings: [
+              {
+                value: attributes.arrowColor,
+                onChange: (v) => setAttributes({ arrowColor: v }),
+                label: __('Arrow color', 'aurora-carousel')
+              },
+              {
+                value: attributes.arrowBgColor,
+                onChange: (v) => setAttributes({ arrowBgColor: v }),
+                label: __('Arrow background', 'aurora-carousel')
+              },
+              {
+                value: attributes.arrowBorderColor,
+                onChange: (v) => setAttributes({ arrowBorderColor: v }),
+                label: __('Arrow border (circle)', 'aurora-carousel')
+              }
+            ]
+          })
         ),
 
         el('div', blockProps,
@@ -165,12 +197,52 @@
 
     save: function Save(props) {
       const a = props.attributes;
+
+      function colorToRgb(color) {
+        if (!color || typeof color !== 'string') return null;
+        var c = color.trim();
+        if (c[0] === '#') {
+          if (c.length === 4) {
+            var r = parseInt(c[1] + c[1], 16);
+            var g = parseInt(c[2] + c[2], 16);
+            var b = parseInt(c[3] + c[3], 16);
+            return r + ',' + g + ',' + b;
+          }
+          if (c.length === 7) {
+            var r2 = parseInt(c.slice(1, 3), 16);
+            var g2 = parseInt(c.slice(3, 5), 16);
+            var b2 = parseInt(c.slice(5, 7), 16);
+            return r2 + ',' + g2 + ',' + b2;
+          }
+        }
+        if (c.indexOf('rgb') === 0) {
+          var m = c.match(/rgba?\(([^)]+)\)/i);
+          if (m && m[1]) {
+            var parts = m[1].split(',').map(function (p) { return parseFloat(p); });
+            if (parts.length >= 3) {
+              return parts[0] + ',' + parts[1] + ',' + parts[2];
+            }
+          }
+        }
+        return null;
+      }
+
+      var styleVars = {
+        '--aurora-arrow-color': a.arrowColor || '#000000',
+        '--aurora-arrow-bg': a.arrowBgColor || '#ffffff',
+        '--aurora-arrow-border': a.arrowBorderColor || 'rgba(0,0,0,0.2)',
+        '--aurora-arrow-bg-opacity': String(a.arrowBgOpacity != null ? a.arrowBgOpacity : 0.92)
+      };
+      var bgRgb = colorToRgb(a.arrowBgColor);
+      if (bgRgb) styleVars['--aurora-arrow-bg-rgb'] = bgRgb;
+
       const blockProps = useBlockProps.save({
         className: 'aurora-carousel',
         tabindex: '0',
         role: 'region',
         'aria-roledescription': 'carousel',
         'aria-label': 'Aurora Carousel',
+        style: styleVars,
         'data-autoplay': a.autoplay ? '1' : '0',
         'data-autoplay-delay': String(a.autoplayDelay),
         'data-speed': String(a.speed),

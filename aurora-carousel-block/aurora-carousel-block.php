@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Aurora Carousel Block
  * Description: Gutenberg carousel block with autoplay, arrows, dots and responsive settings (no build step required).
- * Version: 1.0.1
+ * Version: 1.0.3
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Jarosław Kłębucki
