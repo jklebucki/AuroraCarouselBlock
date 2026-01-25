@@ -3,7 +3,7 @@
   const { registerBlockType } = wp.blocks;
   const { createElement: el, Fragment } = wp.element;
   const { InspectorControls, InnerBlocks, useBlockProps } = wp.blockEditor;
-  const { PanelBody, ToggleControl, RangeControl, Notice } = wp.components;
+  const { PanelBody, ToggleControl, RangeControl, Notice, SelectControl } = wp.components;
 
   const ALLOWED_SLIDE = ['aurora/carousel-slide'];
 
@@ -15,6 +15,7 @@
     loop: { type: 'boolean', default: true },
     arrows: { type: 'boolean', default: true },
     dots: { type: 'boolean', default: true },
+    arrowSize: { type: 'string', default: 'm' },
 
     slidesPerViewMobile: { type: 'number', default: 1.1 },
     slidesPerViewTablet: { type: 'number', default: 2 },
@@ -90,6 +91,17 @@
               label: __('Dots (pagination)', 'aurora-carousel'),
               checked: !!attributes.dots,
               onChange: (v) => setAttributes({ dots: v })
+            }),
+            el(SelectControl, {
+              label: __('Arrow size', 'aurora-carousel'),
+              value: attributes.arrowSize,
+              options: [
+                { label: 'S', value: 's' },
+                { label: 'M', value: 'm' },
+                { label: 'L', value: 'l' },
+                { label: 'XL', value: 'xl' }
+              ],
+              onChange: (v) => setAttributes({ arrowSize: v })
             })
           ),
 
@@ -166,6 +178,7 @@
         'data-loop': a.loop ? '1' : '0',
         'data-arrows': a.arrows ? '1' : '0',
         'data-dots': a.dots ? '1' : '0',
+        'data-arrow-size': a.arrowSize || 'm',
         'data-spv-m': String(a.slidesPerViewMobile),
         'data-spv-t': String(a.slidesPerViewTablet),
         'data-spv-d': String(a.slidesPerViewDesktop),

@@ -2,6 +2,9 @@
 
 .wp-block-aurora-carousel {
   position: relative;
+  --aurora-arrow-size: 40px;
+  --aurora-arrow-head: 10px;
+  --aurora-arrow-stroke: 2px;
 }
 
 .wp-block-aurora-carousel .aurora-carousel__viewport {
@@ -32,8 +35,8 @@
   top: 50%;
   transform: translateY(-50%);
   z-index: 5;
-  width: 40px;
-  height: 40px;
+  width: var(--aurora-arrow-size);
+  height: var(--aurora-arrow-size);
   position: absolute;
   box-sizing: border-box;
   overflow: hidden;
@@ -41,9 +44,11 @@
   border: 1px solid rgba(0,0,0,0.2);
   background: rgba(255,255,255,0.92);
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+  padding: 0;
+  font-size: 0;
   transition: transform 150ms ease, background 150ms ease;
 }
 
@@ -63,10 +68,10 @@
   left: 50%;
   top: 50%;
   display: block;
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid rgba(0,0,0,0.65);
-  border-bottom: 2px solid rgba(0,0,0,0.65);
+  width: var(--aurora-arrow-head);
+  height: var(--aurora-arrow-head);
+  border-right: var(--aurora-arrow-stroke) solid rgba(0,0,0,0.65);
+  border-bottom: var(--aurora-arrow-stroke) solid rgba(0,0,0,0.65);
 }
 
 .wp-block-aurora-carousel .aurora-carousel__prev::before {
@@ -109,6 +114,39 @@
 /* Hide controls when JS decides they are disabled */
 .wp-block-aurora-carousel[data-arrows="0"] .aurora-carousel__nav { display: none; }
 .wp-block-aurora-carousel[data-dots="0"] .aurora-carousel__pagination { display: none; }
+
+/* Arrow sizes */
+.wp-block-aurora-carousel[data-arrow-size="s"] {
+  --aurora-arrow-size: 32px;
+  --aurora-arrow-head: 8px;
+  --aurora-arrow-stroke: 2px;
+}
+.wp-block-aurora-carousel[data-arrow-size="m"] {
+  --aurora-arrow-size: 40px;
+  --aurora-arrow-head: 10px;
+  --aurora-arrow-stroke: 2px;
+}
+.wp-block-aurora-carousel[data-arrow-size="l"] {
+  --aurora-arrow-size: 48px;
+  --aurora-arrow-head: 12px;
+  --aurora-arrow-stroke: 2px;
+}
+.wp-block-aurora-carousel[data-arrow-size="xl"] {
+  --aurora-arrow-size: 56px;
+  --aurora-arrow-head: 14px;
+  --aurora-arrow-stroke: 2px;
+}
+
+@media (max-width: 600px) {
+  .wp-block-aurora-carousel .aurora-carousel__dot {
+    width: 12px;
+    height: 12px;
+  }
+  .wp-block-aurora-carousel[data-arrow-size="s"] {
+    --aurora-arrow-size: 36px;
+    --aurora-arrow-head: 9px;
+  }
+}
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
