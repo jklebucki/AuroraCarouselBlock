@@ -20,6 +20,8 @@ ZIP contains a ready-to-install WordPress plugin.
 - Responsive settings per device (Mobile/Tablet/Desktop):
   - `slidesPerView`
   - `spaceBetween` (gap)
+- Optional link per slide
+- Optional custom attribute on the slide link, e.g. `data-wp-leave-modal="cz"`
 
 ### Notes
 - No build step required (no npm build). Pure JS/CSS + Gutenberg API.
@@ -56,6 +58,8 @@ ZIP contains a ready-to-install WordPress plugin.
 - Nie wymaga budowania (brak npm build). Czysty JS/CSS + API Gutenberga.
 - Slajdy są osobnym blokiem child: **Carousel Slide**.
 - W każdym slajdzie możesz umieszczać dowolne bloki.
+- Każdy slajd może opcjonalnie mieć własny link.
+- Link slajdu może opcjonalnie dostać własny atrybut, np. `data-wp-leave-modal="cz"`.
 
 ### Instalacja
 1. Wgraj katalog `aurora-carousel-block` do `/wp-content/plugins/`

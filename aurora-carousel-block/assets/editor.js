@@ -3,7 +3,7 @@
   const { registerBlockType } = wp.blocks;
   const { createElement: el, Fragment } = wp.element;
   const { InspectorControls, InnerBlocks, useBlockProps, PanelColorSettings } = wp.blockEditor;
-  const { PanelBody, ToggleControl, RangeControl, Notice, SelectControl } = wp.components;
+  const { PanelBody, ToggleControl, RangeControl, Notice, SelectControl, TextControl } = wp.components;
 
   const ALLOWED_SLIDE = ['aurora/carousel-slide'];
 
@@ -35,6 +35,25 @@
     spaceBetweenTablet: { type: 'number', default: 16 },
     spaceBetweenDesktop: { type: 'number', default: 20 }
   };
+
+  function getSlideLinkAttribute(attributes) {
+    const linkAttributeName = (attributes.linkAttributeName || '').trim();
+    const linkAttributeValue = (attributes.linkAttributeValue || '').trim();
+    const legacyLeaveModal = (attributes.leaveModal || '').trim();
+
+    const name = linkAttributeName || (legacyLeaveModal ? 'data-wp-leave-modal' : '');
+    const value = linkAttributeValue || (!linkAttributeValue && legacyLeaveModal ? legacyLeaveModal : '');
+
+    if (!name || !value) {
+      return { name: '', value: '' };
+    }
+
+    return { name, value };
+  }
+
+  function isSafeWrapperAttribute(name) {
+    return /^data-[a-z0-9_.:-]+$/i.test(name) || /^aria-[a-z0-9_.:-]+$/i.test(name);
+  }
 
   registerBlockType('aurora/carousel', {
     apiVersion: 2,
@@ -330,18 +349,93 @@
     category: 'design',
     parent: ['aurora/carousel'],
     description: __('Single slide for Aurora Carousel.', 'aurora-carousel'),
+    attributes: {
+      linkUrl: { type: 'string', default: '' },
+      linkAttributeName: { type: 'string', default: '' },
+      linkAttributeValue: { type: 'string', default: '' },
+      leaveModal: { type: 'string', default: '' }
+    },
     supports: { reusable: false, html: false },
 
-    edit: function SlideEdit() {
-      const blockProps = useBlockProps({ className: 'aurora-carousel__slide' });
-      return el('div', blockProps,
-        el(InnerBlocks, { renderAppender: InnerBlocks.ButtonBlockAppender })
+    edit: function SlideEdit(props) {
+      const { attributes, setAttributes } = props;
+      const linkUrl = (attributes.linkUrl || '').trim();
+      const linkAttribute = getSlideLinkAttribute(attributes);
+      const blockProps = useBlockProps({
+        className: 'aurora-carousel__slide' + (linkUrl ? ' aurora-carousel__slide--linked' : '')
+      });
+
+      return el(Fragment, {},
+        el(InspectorControls, {},
+          el(PanelBody, { title: __('Slide link', 'aurora-carousel'), initialOpen: true },
+            el(TextControl, {
+              label: __('Link URL', 'aurora-carousel'),
+              value: attributes.linkUrl || '',
+              onChange: (value) => setAttributes({ linkUrl: value }),
+              placeholder: 'https://example.com'
+            }),
+            el(TextControl, {
+              label: __('Attribute name', 'aurora-carousel'),
+              value: linkAttribute.name,
+              onChange: (value) => setAttributes({
+                linkAttributeName: value,
+                leaveModal: ''
+              }),
+              placeholder: 'data-wp-leave-modal'
+            }),
+            el(TextControl, {
+              label: __('Attribute value', 'aurora-carousel'),
+              value: linkAttribute.value,
+              onChange: (value) => setAttributes({
+                linkAttributeValue: value,
+                leaveModal: ''
+              }),
+              placeholder: 'cz',
+              help: __('Optional. Adds a custom attribute to the slide link, for example data-wp-leave-modal="cz".', 'aurora-carousel')
+            })
+          )
+        ),
+        el('div', blockProps,
+          linkUrl && el('div', { className: 'aurora-carousel__slide-link-hint' },
+            linkAttribute.name && linkAttribute.value
+              ? __('Linked slide with custom attribute.', 'aurora-carousel')
+              : __('Linked slide.', 'aurora-carousel')
+          ),
+          el(InnerBlocks, { renderAppender: InnerBlocks.ButtonBlockAppender })
+        )
       );
     },
 
-    save: function SlideSave() {
-      const blockProps = useBlockProps.save({ className: 'aurora-carousel__slide' });
-      return el('div', blockProps, el(InnerBlocks.Content, null));
+    save: function SlideSave(props) {
+      const attributes = props.attributes || {};
+      const linkUrl = (attributes.linkUrl || '').trim();
+      const linkAttribute = getSlideLinkAttribute(attributes);
+      const blockPropsOptions = {
+        className: 'aurora-carousel__slide' + (linkUrl ? ' aurora-carousel__slide--linked' : '')
+      };
+
+      if (linkAttribute.name && linkAttribute.value && isSafeWrapperAttribute(linkAttribute.name)) {
+        blockPropsOptions[linkAttribute.name] = linkAttribute.value;
+      }
+
+      const blockProps = useBlockProps.save(blockPropsOptions);
+
+      if (!linkUrl) {
+        return el('div', blockProps, el(InnerBlocks.Content, null));
+      }
+
+      const linkProps = {
+        className: 'aurora-carousel__slide-link',
+        href: linkUrl
+      };
+
+      if (linkAttribute.name && linkAttribute.value) {
+        linkProps[linkAttribute.name] = linkAttribute.value;
+      }
+
+      return el('div', blockProps,
+        el('a', linkProps, el(InnerBlocks.Content, null))
+      );
     }
   });
 
