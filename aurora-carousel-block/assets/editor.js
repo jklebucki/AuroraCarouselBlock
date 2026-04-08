@@ -396,11 +396,6 @@
           )
         ),
         el('div', blockProps,
-          linkUrl && el('div', { className: 'aurora-carousel__slide-link-hint' },
-            linkAttribute.name && linkAttribute.value
-              ? __('Linked slide with custom attribute.', 'aurora-carousel')
-              : __('Linked slide.', 'aurora-carousel')
-          ),
           el(InnerBlocks, { renderAppender: InnerBlocks.ButtonBlockAppender })
         )
       );
@@ -426,7 +421,8 @@
 
       const linkProps = {
         className: 'aurora-carousel__slide-link',
-        href: linkUrl
+        href: linkUrl,
+        'aria-label': __('Open slide link', 'aurora-carousel')
       };
 
       if (linkAttribute.name && linkAttribute.value) {
@@ -434,7 +430,10 @@
       }
 
       return el('div', blockProps,
-        el('a', linkProps, el(InnerBlocks.Content, null))
+        el('div', { className: 'aurora-carousel__slide-content' }, el(InnerBlocks.Content, null)),
+        el('a', linkProps,
+          el('span', { className: 'screen-reader-text' }, __('Open slide link', 'aurora-carousel'))
+        )
       );
     }
   });
